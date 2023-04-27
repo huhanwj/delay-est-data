@@ -17,6 +17,7 @@ macConfig.Address2 = Address2(:)';
 macConfig.Address3 = Address3(:)';
 
 [txPSDU,PSDUlen] = wlanMACFrame(payload, macConfig,"OutputFormat","bits"); % Generate the MAC frame
+txLLTF = wlanLLTF(cfg); % Generate the non-HT long preamble
 wifiSignal = wlanWaveformGenerator(txPSDU, cfg);% Generate the 802.11g waveform
 % Raised Cosine Transmit Filter
 rollOffFactor = 0.5;
@@ -53,9 +54,11 @@ channel1 = comm.RicianChannel(...
 
 channel2 = clone(channel1); % Create an identical channel for the second transmit antenna
 
-[directPathSignal1, pathGains1] = channel1(shapedSignal1);
-[directPathSignal2, pathGains2] = channel2(shapedSignal2);
-
+[directPathSignal1, pathGains1] = awgn(channel1(shapedSignal1), 10);
+[directPathSignal2, pathGains2] = awgn(channel2(shapedSignal2), 10);
+rxLLTF = awgn(channel1(txLLTF), 10); % pass the LLTF through the channel
+dLLTF = wlanLLTFDemodulate(rxLLTF,cfg);
+chEst = wlanLLTFChannelEstimate(dLLTF,cfg);
 % Combine the received signals from both transmit antennas
 receivedSignal = directPathSignal1 + directPathSignal2;
 
@@ -90,8 +93,8 @@ offsetCorrectedSignal = correctedSignal(ind:end);
 
 % Channel estimation
 % Using perfect channel knowledge for simplicity
-demodSignal = wlanNonHTDataRecover(offsetCorrectedSignal, cfg);
-[eqSig, chEst] = wlanEqualize(offsetCorrectedSignal, demodSignal, cfg);
+demodSignal = wlanNonHTDataRecover(offsetCorrectedSignal, chEst,0.1,cfg);
+% [eqSig, chEst] = wlanEqualize(offsetCorrectedSignal, demodSignal, cfg);
 
 % Combine the channel estimates for both antennas
 combinedChEst = pathGains1 + pathGains2;
