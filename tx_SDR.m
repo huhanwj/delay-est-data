@@ -38,13 +38,16 @@ shapedSignal = txFilter(wifiSignal);
 
 % Create SDR transmitter object
 tx = sdrtx('AD936x', ...
-           'IPAddress','192.168.3.2', ...
+           'IPAddress', '192.168.3.2', ...
            'CenterFrequency', centerFrequency, ...
            'BasebandSampleRate', bandwidth, ...
-           'Gain', gain);
+           'Gain', gain, ...
+           'ChannelMapping', [1, 2]); % Enable both transmit channels
 
 % Transmit the shaped 802.11g signal
-transmitRepeat(tx, shapedSignal);
+% Duplicate the shaped signal for both antennas
+shapedSignal2Antennas = repmat(shapedSignal, 1, 2);
+transmitRepeat(tx, shapedSignal2Antennas);
 
 % Release the transmitter
 release(tx);
