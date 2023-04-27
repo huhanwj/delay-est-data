@@ -3,7 +3,7 @@
 % Parameters
 centerFrequency = 2.2e9;
 bandwidth = 20e6;
-gain = 10; % Adjust according to your requirements
+gain = -10; % Adjust according to your requirements
 rollOffFactor = 0.5;
 nSamples = 1024; % Adjust according to your WiFi signal parameters
 captureTime = 10; % Time in seconds for capturing the signal
@@ -16,24 +16,27 @@ rxFilter = comm.RaisedCosineReceiveFilter(...
     'InputSamplesPerSymbol', 1, ... % Adjust according to your requirements
     'DecimationFactor', 1); % Adjust according to your requirements
 
-% Create SDR receiver object
-rx = sdrrx('ZC706 and FMCOMMS2/3/4', ...
-           'CenterFrequency', centerFrequency, ...
-           'GainSource', 'Manual', ...
-           'Gain', gain, ...
-           'SamplesPerFrame', nSamples, ...
-           'OutputDataType', 'double');
-
-% Create a non-HT (802.11g) format configuration object
-cfg = wlanNonHTConfig('MCS', 0); % Default MCS (BPSK, rate 1/2)
+%% Create SDR receiver object
+rx = sdrrx('AD936x', ...
+'IPAddress', '192.168.3.2', ...
+'CenterFrequency', centerFrequency, ...
+'GainSource', 'Manual', ...
+'Gain', gain, ...
+'SamplesPerFrame', nSamples, ...
+'OutputDataType', 'double', ...
+'ChannelMapping', [1, 2]); % Enable both receive channels
 
 % Receive the WiFi signal
 endTime = datetime('now') + seconds(captureTime);
 while datetime('now') < endTime
-    rxSignal = rx();
+rxSignals = rx(); % rxSignals is a matrix where each column corresponds to an antenna
 
-    % Apply matched filtering
-    filteredSignal = rxFilter(rxSignal);
+% Process each received signal
+for antennaIdx = 1:2
+rxSignal = rxSignals(:, antennaIdx);
+
+% Apply matched filtering
+filteredSignal = rxFilter(rxSignal);
 
     % Coarse frequency offset estimation and correction
     coarseEst = wlanCoarseCFOEstimate(filteredSignal, cfg);
@@ -64,7 +67,9 @@ while datetime('now') < endTime
         disp('Payload not received correctly.');
     end
 end
-save('real_received_signal.mat', 'filteredSignal');
+% Save the filtered signals for both antennas
+save('real_received_signal_antenna1.mat', 'filteredSignal1');
+save('real_received_signal_antenna2.mat', 'filteredSignal2');
 
 % Release the receiver
 release(rx);
