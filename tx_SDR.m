@@ -3,7 +3,7 @@
 % Parameters
 centerFrequency = 2.2e9;
 bandwidth = 20e6;
-gain = 10; % Adjust according to your requirements
+gain = -10; % Adjust according to your requirements
 rollOffFactor = 0.5;
 % Set the seed for the random number generator
 seed = 12345;
@@ -15,7 +15,15 @@ payload = randi([0, 1], 1000, 1);
 cfg = wlanNonHTConfig('MCS', 0); % Default MCS (BPSK, rate 1/2)
 
 % Generate the 802.11g frame
-txPSDU = wlanMACFrame(payload, 'Data', cfg);
+macConfig = wlanMACFrameConfig(FrameType="Data");
+% macConfig.Address1 = [255,255,255,255,255,255]; % Broadcast
+Address2 = dec2hex(randi([0, 255],1,6))';
+Address3 = dec2hex(randi([0,255],1,6))';
+macConfig.Address2 = Address2(:)';
+macConfig.Address3 = Address3(:)';
+
+[txPSDU,PSDUlen] = wlanMACFrame(payload, macConfig,"OutputFormat","bits");
+% txPSDU = reshape(hex2dec(reshape(txPSDU,2,[])),1,[]);
 wifiSignal = wlanWaveformGenerator(txPSDU, cfg);
 
 % Raised Cosine Transmit Filter
@@ -29,7 +37,8 @@ txFilter = comm.RaisedCosineTransmitFilter(...
 shapedSignal = txFilter(wifiSignal);
 
 % Create SDR transmitter object
-rx = sdrrx('ZC706 and FMCOMMS2/3/4', ...
+tx = sdrtx('AD936x', ...
+           'IPAddress','192.168.3.2', ...
            'CenterFrequency', centerFrequency, ...
            'BasebandSampleRate', bandwidth, ...
            'Gain', gain);
