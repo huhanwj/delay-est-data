@@ -16,9 +16,8 @@ Address3 = dec2hex(randi([0,255],1,6))';
 macConfig.Address2 = Address2(:)';
 macConfig.Address3 = Address3(:)';
 
-[txPSDU,PSDUlen] = wlanMACFrame(payload, macConfig,"OutputFormat","bits");
-% txPSDU = reshape(hex2dec(reshape(txPSDU,2,[])),1,[]);
-wifiSignal = wlanWaveformGenerator(txPSDU, cfg);
+[txPSDU,PSDUlen] = wlanMACFrame(payload, macConfig,"OutputFormat","bits"); % Generate the MAC frame
+wifiSignal = wlanWaveformGenerator(txPSDU, cfg);% Generate the 802.11g waveform
 % Raised Cosine Transmit Filter
 rollOffFactor = 0.5;
 txFilter = comm.RaisedCosineTransmitFilter(...
@@ -41,7 +40,7 @@ pathDelays = [0, 1.5e-8, 3e-8]; % Path delays
 avgPathGains = [0, -3, -6]; % Average path gains in dB
 
 channel1 = comm.RicianChannel(...
-    'SampleRate', bandwidth, ...
+    'SampleRate', 20e6, ...
     'PathDelays', pathDelays, ...
     'AveragePathGains', avgPathGains, ...
     'KFactor', KFactor, ...
@@ -72,20 +71,21 @@ rxFilter = comm.RaisedCosineReceiveFilter(...
 
 % Apply matched filtering
 filteredSignal = rxFilter(receivedSignal);
-% Apply matched filtering
+% Apply matched filtering just for saving
 filteredSignal1 = rxFilter(directPathSignal1);
 filteredSignal2 = rxFilter(directPathSignal2);
 
+pfOffset = comm.PhaseFrequencyOffset('SampleRate',20e6,'FrequencyOffsetSource','Input port'); % Create a phase frequency offset object
 % Coarse frequency offset estimation and correction
-coarseEst = wlanCoarseCFOEstimate(filteredSignal, cfg);
-correctedSignal = wlanFrequencyCorrection(filteredSignal, coarseEst);
+coarseEst = wlanCoarseCFOEstimate(filteredSignal, 'CBW20');
+correctedSignal = pfOffset(filteredSignal, -coarseEst);
 
 % Fine frequency offset estimation and correction
-fineEst = wlanFineCFOEstimate(correctedSignal, cfg);
-correctedSignal = wlanFrequencyCorrection(correctedSignal, fineEst);
+fineEst = wlanFineCFOEstimate(correctedSignal, 'CBW20');
+correctedSignal = pfOffset(correctedSignal, -fineEst);
 
 % Symbol timing synchronization
-[ind, symOffset] = wlanSymbolTimingEstimate(correctedSignal, cfg);
+[ind, symOffset] = wlanSymbolTimingEstimate(correctedSignal, 'CBW20');
 offsetCorrectedSignal = correctedSignal(ind:end);
 
 % Channel estimation
