@@ -2,7 +2,6 @@
 % Set the seed for the random number generator
 seed = 12345;
 rng(seed);
-
 % Generate a random payload
 payload = randi([0, 1], 1000, 1);
 
@@ -10,9 +9,16 @@ payload = randi([0, 1], 1000, 1);
 cfg = wlanNonHTConfig('MCS', 0); % Default MCS (BPSK, rate 1/2)
 
 % Generate the 802.11g frame
-txPSDU = wlanMACFrame(payload, 'Data', cfg);
-wifiSignal = wlanWaveformGenerator(txPSDU, cfg);
+macConfig = wlanMACFrameConfig(FrameType="Data");
+% macConfig.Address1 = [255,255,255,255,255,255]; % Broadcast
+Address2 = dec2hex(randi([0, 255],1,6))';
+Address3 = dec2hex(randi([0,255],1,6))';
+macConfig.Address2 = Address2(:)';
+macConfig.Address3 = Address3(:)';
 
+[txPSDU,PSDUlen] = wlanMACFrame(payload, macConfig,"OutputFormat","bits");
+% txPSDU = reshape(hex2dec(reshape(txPSDU,2,[])),1,[]);
+wifiSignal = wlanWaveformGenerator(txPSDU, cfg);
 % Raised Cosine Transmit Filter
 rollOffFactor = 0.5;
 txFilter = comm.RaisedCosineTransmitFilter(...
@@ -24,12 +30,17 @@ txFilter = comm.RaisedCosineTransmitFilter(...
 % Apply pulse shaping
 shapedSignal = txFilter(wifiSignal);
 
+% Generate shaped signal for both antennas
+shapedSignal1 = shapedSignal;
+shapedSignal2 = shapedSignal;
+
 % Simulate a more realistic channel
+% Assume perfect channel knowledge at the receiver
 KFactor = 4; % Rician K-factor
 pathDelays = [0, 1.5e-8, 3e-8]; % Path delays
 avgPathGains = [0, -3, -6]; % Average path gains in dB
 
-channel = comm.RicianChannel(...
+channel1 = comm.RicianChannel(...
     'SampleRate', bandwidth, ...
     'PathDelays', pathDelays, ...
     'AveragePathGains', avgPathGains, ...
@@ -41,7 +52,13 @@ channel = comm.RicianChannel(...
     'Seed', seed, ...
     'PathGainsOutputPort', true);
 
-[directPathSignal, pathGains] = channel(shapedSignal);
+channel2 = clone(channel1); % Create an identical channel for the second transmit antenna
+
+[directPathSignal1, pathGains1] = channel1(shapedSignal1);
+[directPathSignal2, pathGains2] = channel2(shapedSignal2);
+
+% Combine the received signals from both transmit antennas
+receivedSignal = directPathSignal1 + directPathSignal2;
 
 % Receiver
 
@@ -54,7 +71,10 @@ rxFilter = comm.RaisedCosineReceiveFilter(...
     'DecimationFactor', 1);
 
 % Apply matched filtering
-filteredSignal = rxFilter(directPathSignal);
+filteredSignal = rxFilter(receivedSignal);
+% Apply matched filtering
+filteredSignal1 = rxFilter(directPathSignal1);
+filteredSignal2 = rxFilter(directPathSignal2);
 
 % Coarse frequency offset estimation and correction
 coarseEst = wlanCoarseCFOEstimate(filteredSignal, cfg);
@@ -69,14 +89,22 @@ correctedSignal = wlanFrequencyCorrection(correctedSignal, fineEst);
 offsetCorrectedSignal = correctedSignal(ind:end);
 
 % Channel estimation
+% Using perfect channel knowledge for simplicity
 demodSignal = wlanNonHTDataRecover(offsetCorrectedSignal, cfg);
 [eqSig, chEst] = wlanEqualize(offsetCorrectedSignal, demodSignal, cfg);
 
+% Combine the channel estimates for both antennas
+combinedChEst = pathGains1 + pathGains2;
+
+% Apply the MIMO channel estimates to the equalized signal
+eqSigWithMIMO = eqSig .* conj(combinedChEst);
+
 % Demodulate and decode the received signal
-rxPSDU = wlanNonHTDataRecover(eqSig, cfg);
+rxPSDU = wlanNonHTDataRecover(eqSigWithMIMO, cfg);
 
 % Decode the received MAC frame
 [rxPayload, rxFrameType] = wlanMACFrame(rxPSDU, cfg);
 
-% Save the received signal from the simulation
-save('simulated_received_signal.mat', 'filteredSignal');
+% Save the received signals from both antennas
+save('simulated_received_signal_antenna1.mat', 'filteredSignal1');
+save('simulated_received_signal_antenna2.mat', 'filteredSignal2');
