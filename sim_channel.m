@@ -1,8 +1,8 @@
 channel = "GaussianNoise";
 if strcmpi(channel, "OverTheAir")
     deviceName = "AD936x";
-    channelNumber = 5;
-    frequencyBand = 2.4;
+    channelNumber = 165;
+    frequencyBand = 5;
     txGain = -10;
     RxGain = 10;
 elseif strcmpi(channel, "GaussianNoise")
