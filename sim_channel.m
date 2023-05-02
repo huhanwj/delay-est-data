@@ -37,11 +37,12 @@ constellation = comm.ConstellationDiagram(...
     Position=[878 376 460 460]);
 %% Prepare data for transmission
 fData = zeros(100,100,'uint8'); % should equal to a all black grayscale image
+fData_t = fData(:); % Convert to vector
 %% Fragment Transmit Data
 msduLength = 2304; % Number of bytes in PSDU
-numMSDUs = ceil(length(fData)/msduLength); % Number of required MPDUs
-padZeros = msduLength - mod(length(fData),msduLength); % Number of zeros to pad
-txData = [fData;zeros(padZeros,1)]; % Pad PSDU with zeros
+numMSDUs = ceil(length(fData_t)/msduLength); % Number of required MPDUs
+padZeros = msduLength - mod(length(fData_t),msduLength); % Number of zeros to pad
+txData = [fData_t;zeros(padZeros,1)]; % Pad PSDU with zeros
 txDataBits = double(int2bit(txData,8,false)); % Convert PSDU to bits
 % Divide input data stream into fragments
 bitsPerOctet = 8;
