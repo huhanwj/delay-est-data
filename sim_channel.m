@@ -99,7 +99,7 @@ lsig = wlanLSIG(nonHTcfg);
 waveform = [lstf; lltf; lsig];
 for i = 1:numMSDUs
     psdu = data((i-1)*lengthMPDU*8+1:lengthMPDU*8*i);
-    nonhtdata = wlanNonHTData(psdu, nonHTcfg, 'ScramblerInitialization', scramblerInitialization(i));
+    nonhtdata = wlanNonHTData(psdu, nonHTcfg, scramblerInitialization(i));
     
     % Concatenate the fields to create the complete waveform
     waveform = [waveform; nonhtdata];
