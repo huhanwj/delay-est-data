@@ -94,7 +94,7 @@ lsig = wlanLSIG(nonHTcfg, overSamplingFactor=osf);
 waveform = [lstf; lltf; lsig];
 for i = 1:numMSDUs
     psdu = data((i-1)*lengthMPDU*8+1:lengthMPDU*8*i);
-    nonhtdata = wlanNonHTData(psdu, nonHTcfg, scramblerInitialization(i), osf);
+    nonhtdata = wlanNonHTData(psdu, nonHTcfg, scramblerInitialization(i), OversamplingFactor = osf);
     
     % Concatenate the fields to create the complete waveform
     waveform = [waveform; nonhtdata];
@@ -164,7 +164,8 @@ release(spectrumScope);
 matchedFilterCoeffs = flip(coeffs);
 
 % Apply matched filter
-rxWaveform = upfirdn(rxWaveform,matchedFilterCoeffs,1,osf);
+rxWaveform = upfirdn(rxWaveform,matchedFilterCoeffs);
+rxWaveform = resample(rxWaveform,2,3);
 
 % Set up required variables for receiver processing.
 rxWaveformLen = size(rxWaveform,1);
@@ -189,7 +190,7 @@ evmCalculator.MaximumEVMOutputPort = true;
 %% Use a while loop to process the received out-of-order packets.
 while (searchOffset+minPktLen)<=rxWaveformLen
     % Packet detect
-    pktOffset = wlanPacketDetect(rxWaveform,chanBW,searchOffset,0.5);
+    pktOffset = wlanPacketDetect(rxWaveform,chanBW);
 
     % Adjust packet offset
     pktOffset = searchOffset+pktOffset;
