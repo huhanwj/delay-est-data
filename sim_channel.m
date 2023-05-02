@@ -69,8 +69,6 @@ for i=0:numMSDUs-1
 
     % Concatenate PSDUs for waveform generation
     data = [data; psdu]; %#ok<AGROW>
-
-    end
 end
 
 %% Generate 802.11a Baseband WLAN Signal
