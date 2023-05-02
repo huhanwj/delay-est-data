@@ -47,15 +47,6 @@ txDataBits = double(int2bit(txData,8,false)); % Convert PSDU to bits
 % Divide input data stream into fragments
 bitsPerOctet = 8;
 data = zeros(0,1);
-% Define idle time
-idleTime = 20e-6; % 20 microseconds
-
-% Calculate nominal sample rate for 20 MHz bandwidth
-sampleRate = 20e6 * 3.2; % 64 Msps
-
-% Calculate idle time samples based on the nominal sample rate
-idleTimeSamples = round(idleTime * sampleRate);
-
 for i=0:numMSDUs-1
 
     % Extract image data (in octets) for each MPDU
@@ -83,6 +74,10 @@ scramblerInitialization = randi([1 127],numMSDUs,1);
 osf = 1.5;
 
 sampleRate = wlanSampleRate(nonHTcfg); % Nominal sample rate in Hz
+% Define idle time
+idleTime = 20e-6; % 20 microseconds
+% Calculate idle time samples based on the nominal sample rate
+idleTimeSamples = round(idleTime * sampleRate * osf);
 
 % % Generate baseband NonHT packets separated by idle time
 % txWaveform = wlanWaveformGenerator(data,nonHTcfg, ...
@@ -91,15 +86,15 @@ sampleRate = wlanSampleRate(nonHTcfg); % Nominal sample rate in Hz
 %     OversamplingFactor=osf);
 
 % Generate L-STF, L-LTF, and L-SIG fields
-lstf = wlanLSTF(nonHTcfg);
-lltf = wlanLLTF(nonHTcfg);
-lsig = wlanLSIG(nonHTcfg);
+lstf = wlanLSTF(nonHTcfg, overSamplingFactor=osf);
+lltf = wlanLLTF(nonHTcfg, overSamplingFactor=osf);
+lsig = wlanLSIG(nonHTcfg, overSamplingFactor=osf);
 
 % Generate the non-HT Data field for each packet and concatenate with idle time
 waveform = [lstf; lltf; lsig];
 for i = 1:numMSDUs
     psdu = data((i-1)*lengthMPDU*8+1:lengthMPDU*8*i);
-    nonhtdata = wlanNonHTData(psdu, nonHTcfg, scramblerInitialization(i));
+    nonhtdata = wlanNonHTData(psdu, nonHTcfg, scramblerInitialization(i), osf);
     
     % Concatenate the fields to create the complete waveform
     waveform = [waveform; nonhtdata];
@@ -114,7 +109,7 @@ end
 % Design a custom raised cosine filter
 rollOffFactor = 0.5;
 span = 8; % Filter span in symbols
-sps = osf; % Samples per symbol
+sps = 1; % Samples per symbol
 numCoeffs = span*sps+1; % Number of filter coefficients
 coeffs = rcosdesign(rollOffFactor, span, sps, 'sqrt'); % Filter coefficients
 
