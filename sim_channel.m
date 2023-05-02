@@ -98,7 +98,7 @@ lsig = wlanLSIG(nonHTcfg);
 % Generate the non-HT Data field for each packet and concatenate with idle time
 waveform = [lstf; lltf; lsig];
 for i = 1:numMSDUs
-    psdu = data((i-1)*lengthMPDU+1:lengthMPDU*i);
+    psdu = data((i-1)*lengthMPDU*8+1:lengthMPDU*8*i);
     nonhtdata = wlanNonHTData(psdu, nonHTcfg, 'ScramblerInitialization', scramblerInitialization(i));
     
     % Concatenate the fields to create the complete waveform
