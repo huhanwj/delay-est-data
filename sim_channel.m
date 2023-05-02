@@ -101,19 +101,7 @@ lltf = wlanLLTF(nonHTcfg);
 lsig = wlanLSIG(nonHTcfg);
 
 % Generate the non-HT Data field without guard interval
-nonhtdata_nogi = wlanNonHTData(data, nonHTcfg, 'ScramblerInitialization', scramblerInitialization, 'GuardInterval', false);
-
-% Add guard interval to each OFDM symbol
-gi = wlanGIField(nonHTcfg);
-numSymbols = size(nonhtdata_nogi, 1) / 80;  % 80 is the number of samples per symbol in 802.11a
-nonhtdata = zeros(0, 1);
-for k = 1:numSymbols
-    symbol_start = (k-1) * 80 + 1;
-    symbol_end = k * 80;
-    symbol_with_gi = [gi; nonhtdata_nogi(symbol_start:symbol_end)];
-    nonhtdata = [nonhtdata; symbol_with_gi];
-end
-
+nonhtdata = wlanNonHTData(data, nonHTcfg, 'ScramblerInitialization', scramblerInitialization);
 
 % Concatenate the fields to create the complete waveform
 waveform = [lstf; lltf; lsig; nonhtdata];
