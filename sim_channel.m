@@ -70,9 +70,6 @@ for i=0:numMSDUs-1
     % Concatenate PSDUs for waveform generation
     data = [data; psdu]; %#ok<AGROW>
 
-    % Add idle time if not the last packet
-    if i ~= numMSDUs - 1
-        data = [data; zeros(idleTimeSamples, 1)];
     end
 end
 
@@ -100,11 +97,21 @@ lstf = wlanLSTF(nonHTcfg);
 lltf = wlanLLTF(nonHTcfg);
 lsig = wlanLSIG(nonHTcfg);
 
-% Generate the non-HT Data field without guard interval
-nonhtdata = wlanNonHTData(data, nonHTcfg, 'ScramblerInitialization', scramblerInitialization);
+% Generate the non-HT Data field for each packet and concatenate with idle time
+waveform = [lstf; lltf; lsig];
+for i = 1:numMSDUs
+    psdu = data((i-1)*lengthMPDU+1:lengthMPDU*i);
+    nonhtdata = wlanNonHTData(psdu, nonHTcfg, 'ScramblerInitialization', scramblerInitialization(i));
+    
+    % Concatenate the fields to create the complete waveform
+    waveform = [waveform; nonhtdata];
+    
+    % Add idle time if not the last packet
+    if i ~= numMSDUs
+        waveform = [waveform; zeros(idleTimeSamples, 1)];
+    end
+end
 
-% Concatenate the fields to create the complete waveform
-waveform = [lstf; lltf; lsig; nonhtdata];
 
 % Design a custom raised cosine filter
 rollOffFactor = 0.5;
