@@ -167,6 +167,8 @@ matchedFilterCoeffs = flip(coeffs);
 rxWaveform = upfirdn(rxWaveform,matchedFilterCoeffs);
 rxWaveform = resample(rxWaveform,2,3);
 
+% Display each detected packet
+displayFlag = true;
 % Set up required variables for receiver processing.
 rxWaveformLen = size(rxWaveform,1);
 searchOffset = 0; % Offset from start of the waveform in samples
@@ -417,25 +419,25 @@ if ~(isempty(fineTimingOffset) || isempty(pktOffset))
         fprintf('    Number of transmitted bits = %d\n\n',length(txDataBits));
     end
 
-    % decData = bit2int(reshape(rxData(:),8,[]),8,false)';
+    decData = bit2int(reshape(rxData(:),8,[]),8,false)';
 
-    % % Append NaNs to fill any missing image data
-    % if length(decData)<length(txImage)
-    %     numMissingData = length(txImage)-length(decData);
-    %     decData = [decData;NaN(numMissingData,1)];
-    % else
-    %     decData = decData(1:length(txImage));
-    % end
+    % Append NaNs to fill any missing image data
+    if length(decData)<length(fData_t)
+        numMissingData = length(fData_t)-length(decData);
+        decData = [decData;NaN(numMissingData,1)];
+    else
+        decData = decData(1:length(fData_t));
+    end
 
-    % % Recreate image from received data
-    % fprintf('\nConstructing image from received data.\n');
-    % receivedImage = uint8(reshape(decData,imsize));
-    % % Plot received image
-    % if exist('imFig','var') && ishandle(imFig) % If Tx figure is open
-    %     figure(imFig); subplot(212);
-    % else
-    %     figure; subplot(212);
-    % end
-    % imshow(receivedImage);
-    % title(sprintf('Received Image'));
+    % Recreate image from received data
+    fprintf('\nConstructing image from received data.\n');
+    receivedImage = uint8(reshape(decData,size(fData)));
+    % Plot received image
+    if exist('imFig','var') && ishandle(imFig) % If Tx figure is open
+        figure(imFig); subplot(212);
+    else
+        figure; subplot(212);
+    end
+    imshow(receivedImage);
+    title(sprintf('Received Image'));
 end
