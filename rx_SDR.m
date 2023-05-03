@@ -4,37 +4,12 @@ if strcmpi(channel, "OverTheAir")
     channelNumber = 165;
     frequencyBand = 5;
     txGain = -10;
-    RxGain = 10;
+    rxGain = 10;
 elseif strcmpi(channel, "GaussianNoise")
     % Specify the SNR of received signal for a simulated channel
     SNR = 10;
 end
-% Configure all the scopes and figures for the example
-% Setup handle for image plot
-if ~exist('imFig','var') || ~ishandle(imFig) %#ok<SUSENS> 
-    imFig = figure;
-    imFig.NumberTitle = 'off';
-    imFig.Name = 'Image Plot';
-    imFig.Visible = 'off';
-else
-    clf(imFig); % Clear figure
-    imFig.Visible = 'off';
-end
 
-% Setup Spectrum viewer
-spectrumScope = spectrumAnalyzer( ...
-    SpectrumType='power-density', ...
-    Title='Received Baseband WLAN Signal Spectrum', ...
-    YLabel='Power spectral density', ...
-    Position=[69 376 800 450]);
-
-% Setup the constellation diagram viewer for equalized WLAN symbols
-refQAM = wlanReferenceSymbols('64QAM');
-constellation = comm.ConstellationDiagram(...
-    Title='Equalized WLAN Symbols',...
-    ShowReferenceConstellation=true,...
-    ReferenceConstellation=refQAM,...
-    Position=[878 376 460 460]);
 if strcmpi(channel,"OverTheAir")
 
     sdrReceiver = sdrrx(deviceName);
@@ -52,10 +27,10 @@ if strcmpi(channel,"OverTheAir")
     % Configure the capture length equivalent to twice the length of the
     % transmitted signal, this is to ensure that PSDUs are received in order.
     % On reception the duplicate MAC fragments are removed.
-    sdrReceiver.SamplesPerFrame = 30000;
+    sdrReceiver.SamplesPerFrame = 130000;
     fprintf('\nStarting a new RF capture.\n')
     % Set the capture duration and samples per frame
-    captureDuration = 10; % 10 seconds
+    captureDuration = 6; % in seconds
     samplesPerFrame = sdrReceiver.SamplesPerFrame;
 
     % Create a buffer to store the received waveform

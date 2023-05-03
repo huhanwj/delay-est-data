@@ -1,5 +1,47 @@
+% Configure all the scopes and figures for the example
+% Setup handle for image plot
+if ~exist('imFig','var') || ~ishandle(imFig) %#ok<SUSENS> 
+    imFig = figure;
+    imFig.NumberTitle = 'off';
+    imFig.Name = 'Image Plot';
+    imFig.Visible = 'off';
+else
+    clf(imFig); % Clear figure
+    imFig.Visible = 'off';
+end
+
+% Setup Spectrum viewer
+spectrumScope = spectrumAnalyzer( ...
+    SpectrumType='power-density', ...
+    Title='Received Baseband WLAN Signal Spectrum', ...
+    YLabel='Power spectral density', ...
+    Position=[69 376 800 450]);
+
+% Setup the constellation diagram viewer for equalized WLAN symbols
+refQAM = wlanReferenceSymbols('64QAM');
+constellation = comm.ConstellationDiagram(...
+    Title='Equalized WLAN Symbols',...
+    ShowReferenceConstellation=true,...
+    ReferenceConstellation=refQAM,...
+    Position=[878 376 460 460]);
 % load the rxWaveform
-rxWaveform = load("rxWaveformBuffer.mat");
+Waveform = load("rxWaveformBuffer.mat");
+rxWaveform = Waveform.rxWaveformBuffer;
+% load the coeffs
+nonHTcfg = wlanNonHTConfig;       % Create packet configuration
+chanBW = nonHTcfg.ChannelBandwidth;
+lengthMPDU = 2304;
+nonHTcfg.PSDULength = lengthMPDU; % Set the PSDU length
+nonHTcfg.MCS = 6;                 % Modulation: 64QAM Rate: 2/3
+nonHTcfg.NumTransmitAntennas = 1; % Number of transmit antenna
+osf = 1.5;
+sampleRate = wlanSampleRate(nonHTcfg); % Nominal sample rate in Hz
+% the custom raised cosine filter
+rollOffFactor = 0.05;
+span = 8; % Filter span in symbols
+sps = 1; % Samples per symbol
+numCoeffs = span*sps+1; % Number of filter coefficients
+coeffs = rcosdesign(rollOffFactor, span, sps, 'sqrt'); % Filter coefficients
 % Show the power spectral density of the received waveform.
 
 spectrumScope.SampleRate = sampleRate*osf;

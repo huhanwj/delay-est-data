@@ -4,7 +4,7 @@ if strcmpi(channel, "OverTheAir")
     channelNumber = 165;
     frequencyBand = 5;
     txGain = -10;
-    RxGain = 10;
+    rxGain = 10;
 elseif strcmpi(channel, "GaussianNoise")
     % Specify the SNR of received signal for a simulated channel
     SNR = 10;
