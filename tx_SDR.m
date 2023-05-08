@@ -107,7 +107,7 @@ end
 
 
 % Design a custom raised cosine filter
-rollOffFactor = 0.5;
+rollOffFactor = 0.05;
 span = 8; % Filter span in symbols
 sps = 1; % Samples per symbol
 numCoeffs = span*sps+1; % Number of filter coefficients

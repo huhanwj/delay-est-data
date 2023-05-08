@@ -58,3 +58,12 @@ if strcmpi(channel,"OverTheAir")
     % release(sdrTransmitter);
     release(sdrReceiver);
 end
+
+% raised cosine filter parameters
+% Design a custom raised cosine filter
+rollOffFactor = 0.05;
+span = 8; % Filter span in symbols
+sps = 1; % Samples per symbol
+numCoeffs = span*sps+1; % Number of filter coefficients
+coeffs = rcosdesign(rollOffFactor, span, sps, 'sqrt'); % Filter coefficients
+
