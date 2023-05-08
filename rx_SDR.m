@@ -13,7 +13,7 @@ end
 if strcmpi(channel,"OverTheAir")
 
     sdrReceiver = sdrrx(deviceName);
-    sdrReceiver.BasebandSampleRate = wlanSampleRate(nonHTcfg)*1.5;
+    sdrReceiver.BasebandSampleRate = wlanSampleRate(wlanNonHTConfig)*1.5;
     sdrReceiver.CenterFrequency = wlanChannelFrequency(channelNumber,frequencyBand);
     sdrReceiver.OutputDataType = 'double';
     sdrReceiver.GainSource = 'Manual';
