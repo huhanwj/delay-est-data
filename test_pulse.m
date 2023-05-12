@@ -3,6 +3,7 @@ numBits = 1e4;
 data = randi([0 1], numBits, 1);
 %% BPSK modulation
 modData = pskmod(data, 2);
+% modData = waveform;
 
 %% Rayleigh and Rician channel
 rayleighChannel = comm.RayleighChannel;
@@ -24,7 +25,7 @@ ricianOutput = ricianChannel(modData);
 % legend("Input","Rayleigh","Rician");
 t = (0:length(modData)-1)';
 
-plot(t, rea(modData));
+plot(t, real(modData));
 hold on;
 plot(t, real(rayleighOutput));
 plot(t, real(ricianOutput));
