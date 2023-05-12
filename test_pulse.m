@@ -32,3 +32,7 @@ plot(t, real(ricianOutput));
 legend("Input","Rayleigh","Rician");
 
 hold off;
+
+scope = spectrumAnalyzer;
+scope(ricianOutput,rayleighOutput,modData);
+release(scope);
