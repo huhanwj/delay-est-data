@@ -114,7 +114,7 @@ numCoeffs = span*sps+1; % Number of filter coefficients
 coeffs = rcosdesign(rollOffFactor, span, sps, 'sqrt'); % Filter coefficients
 
 % Apply the filter to the waveform (pulse shaping)
-shapedSignal = upfirdn(waveform, coeffs, sps);
+txWaveform = upfirdn(waveform, coeffs, sps);
 if strcmpi(channel,"OverTheAir")
 
     % Transmitter properties
